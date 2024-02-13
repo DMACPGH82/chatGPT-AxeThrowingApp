@@ -1,0 +1,210 @@
+// Import necessary modules and dependencies
+const express = require('express');
+const mongoose = require('mongoose');
+const bodyParser = require('body-parser');
+
+// Initialize Express app
+const app = express();
+
+// Middleware
+app.use(bodyParser.json());
+
+// MongoDB connection setup
+mongoose.connect('mongodb://localhost:27017/axeThrowingApp', {
+  useNewUrlParser: true,
+  useUnifiedTopology: true,
+});
+
+// Define MongoDB schema and models
+const ThrowerSchema = new mongoose.Schema({
+  name: String,
+  standingsPoints: Number,
+  headToHeadWins: Number,
+  wins: { type: Number, default: 0 },
+  losses: { type: Number, default: 0 },
+  overtimeLosses: { type: Number, default: 0 },
+  roundsWon: { type: Number, default: 0 },
+  roundsLost: { type: Number, default: 0 },
+  roundsTied: { type: Number, default: 0 },
+  totalPointsScored: { type: Number, default: 0 },
+  totalMatchesPlayed: { type: Number, default: 0 },
+  average: { type: Number, default: 0 },
+  clutchPercentage: { type: Number, default: 0 },
+  bullseyePercentage: { type: Number, default: 0 },
+  numSevens: { type: Number, default: 0 },
+  numFives: { type: Number, default: 0 },
+  numThrees: { type: Number, default: 0 },
+  numOnes: { type: Number, default: 0 },
+  numZeros: { type: Number, default: 0 },
+  sevensPercent: { type: Number, default: 0 },
+  fivesPercent: { type: Number, default: 0 },
+  consecutiveWins: { type: Number, default: 0 },
+  consecutiveLosses: { type: Number, default: 0 },
+  matchIndex: { type: Number, default: 0 } // Index number for matches
+});
+
+const LeagueSchema = new mongoose.Schema({
+  name: String,
+  location: String,
+  dayOfWeek: String,
+  color: String,
+  yearMonth: String // Format: YYYY-MM
+});
+
+const MatchSchema = new mongoose.Schema({
+  thrower1: { type: mongoose.Schema.Types.ObjectId, ref: 'Thrower' },
+  thrower2: { type: mongoose.Schema.Types.ObjectId, ref: 'Thrower' },
+  result: String,
+  matchNumber: Number,
+  leagueId: { type: mongoose.Schema.Types.ObjectId, ref: 'League' },
+});
+
+const PlayoffMatchSchema = new mongoose.Schema({
+  throwerA: { type: mongoose.Schema.Types.ObjectId, ref: 'Thrower' },
+  throwerB: { type: mongoose.Schema.Types.ObjectId, ref: 'Thrower' },
+  rounds: [{ throws: [Number], result: String }],
+  winner: { type: mongoose.Schema.Types.ObjectId, ref: 'Thrower' },
+  loser: { type: mongoose.Schema.Types.ObjectId, ref: 'Thrower' },
+});
+
+const Thrower = mongoose.model('Thrower', ThrowerSchema);
+const League = mongoose.model('League', LeagueSchema);
+const Match = mongoose.model('Match', MatchSchema);
+const PlayoffMatch = mongoose.model('PlayoffMatch', PlayoffMatchSchema);
+
+// Function to convert date to YYYY-MMM format
+function formatDateToYearMonth(dateString) {
+  const date = new Date(dateString);
+  const year = date.getFullYear();
+  const month = date.toLocaleString('default', { month: 'short' });
+  return `${year}-${month}`;
+}
+
+// Routes
+// Route to create a league
+app.post('/leagues', async (req, res) => {
+  try {
+    const { name, location, dayOfWeek, color, date } = req.body;
+
+    // Convert date to YYYY-MMM format
+    const yearMonth = formatDateToYearMonth(date);
+
+    const league = new League({
+      name,
+      location,
+      dayOfWeek,
+      color,
+      yearMonth
+    });
+
+    await league.save();
+
+    res.status(201).json({ message: 'League created successfully.', league });
+  } catch (error) {
+    res.status(500).json({ error: 'Unable to create league.' });
+  }
+});
+
+// Route to record match results
+app.post('/matches', async (req, res) => {
+  try {
+    const { throwerAId, throwerBId, result, matchIndex, matchNumber, leagueId } = req.body;
+
+    const throwerA = await Thrower.findById(throwerAId);
+    const throwerB = await Thrower.findById(throwerBId);
+
+    if (!throwerA || !throwerB) {
+      return res.status(404).json({ error: 'One or both throwers not found.' });
+    }
+
+    // Update career statistics based on match result
+    if (result === 'win') {
+      throwerA.wins++;
+      throwerB.losses++;
+      throwerA.consecutiveWins++;
+      throwerB.consecutiveLosses = 0;
+      throwerA.consecutiveLosses = 0;
+      throwerB.consecutiveWins = 0;
+    } else if (result === 'loss') {
+      throwerA.losses++;
+      throwerB.wins++;
+      throwerA.consecutiveLosses++;
+      throwerB.consecutiveWins = 0;
+      throwerA.consecutiveWins = 0;
+      throwerB.consecutiveLosses = 0;
+    } else if (result === 'overtime loss') {
+      throwerA.overtimeLosses++;
+      throwerB.overtimeLosses++;
+    }
+
+    // Update match index
+    throwerA.matchIndex = Math.max(throwerA.matchIndex, matchIndex);
+    throwerB.matchIndex = Math.max(throwerB.matchIndex, matchIndex);
+
+    // Update other statistics based on match details (round scores, etc.)
+    
+    // Calculate percentages for 7s and 5s
+    throwerA.sevensPercent = throwerA.numSevens / (throwerA.totalMatchesPlayed * 3) * 100;
+    throwerB.sevensPercent = throwerB.numSevens / (throwerB.totalMatchesPlayed * 3) * 100;
+
+    const totalThrowsForBullseyeA = (throwerA.totalMatchesPlayed * 15) - (throwerA.numSevens * 3);
+    throwerA.fivesPercent = (throwerA.numFives + throwerA.numSevens) / totalThrowsForBullseyeA * 100;
+
+    const totalThrowsForBullseyeB = (throwerB.totalMatchesPlayed * 15) - (throwerB.numSevens * 3);
+    throwerB.fivesPercent = (throwerB.numFives + throwerB.numSevens) / totalThrowsForBullseyeB * 100;
+
+    // Save updated player data
+    await throwerA.save();
+    await throwerB.save();
+
+    res.status(200).json({ message: 'Match results recorded successfully.' });
+  } catch (error) {
+    res.status(500).json({ error: 'Unable to record match results.' });
+  }
+});
+
+// Route to get career stats sorted by various criteria
+app.get('/career-stats', async (req, res) => {
+  try {
+    // Query all throwers
+    const throwers = await Thrower.find().sort('name');
+
+    // Array to store sorted career stats
+    const careerStats = [];
+
+    // Iterate through throwers
+    for (const thrower of throwers) {
+      // Fetch all matches for the thrower sorted by match index number and match number
+      const matches = await Match.find({ $or: [{ thrower1: thrower._id }, { thrower2: thrower._id }] })
+                                  .sort('matchIndex matchNumber');
+
+      // Iterate through matches
+      for (const match of matches) {
+        // Fetch league details for the match
+        const league = await League.findById(match.leagueId);
+
+        // Push career stats entry for the match to the array
+        careerStats.push({
+          throwerName: thrower.name,
+          matchIndex: thrower.matchIndex,
+          matchNumber: match.matchNumber,
+          leagueDate: league.date,
+          // Include other relevant statistics as needed
+        });
+      }
+    }
+
+    // Sort career stats array by league date in ascending order
+    careerStats.sort((a, b) => new Date(a.leagueDate) - new Date(b.leagueDate));
+
+    res.status(200).json({ careerStats });
+  } catch (error) {
+    res.status(500).json({ error: 'Unable to fetch career stats.' });
+  }
+});
+
+// Start the server
+const PORT = process.env.PORT || 3000;
+app.listen(PORT, () => {
+  console.log(`Server is running on port ${PORT}`);
+});
