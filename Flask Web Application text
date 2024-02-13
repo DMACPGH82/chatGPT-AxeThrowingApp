@@ -1,0 +1,22 @@
+from flask import Flask, render_template
+
+app = Flask(__name__)
+
+@app.route('/')
+def home():
+    return render_template('index.html')
+
+@app.route('/create-league')
+def create_league():
+    # Add logic for league creation here
+    return render_template('create_league.html')
+
+@app.route('/matches')
+def matches():
+    # Add logic to fetch and display matches here
+    return render_template('matches.html')
+
+# Add routes for other screens (players, standings, playoffs, settings) similarly
+
+if __name__ == '__main__':
+    app.run(debug=True)
