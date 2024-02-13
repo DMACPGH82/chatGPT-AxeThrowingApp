@@ -1,0 +1,16 @@
+Install MongoDB: If you haven't already, you'll need to install MongoDB on your local machine. You can download it from the official MongoDB website and follow the installation instructions for your operating system.
+
+Set Up a Node.js Project: Create a new directory for your project and initialize a new Node.js project using npm init. This will create a package.json file for managing your project dependencies.
+
+Install Dependencies: Install the necessary dependencies (express, mongoose, and body-parser) by running the following command in your project directory:
+npm install express mongoose body-parser
+
+Create a MongoDB Database: Start MongoDB locally and create a new database for your project. You can do this by running mongod in your terminal to start the MongoDB server, and then use the mongo shell to create a new database.
+
+Create MongoDB Schemas: Create separate files for your MongoDB schemas (Thrower, League, Match, PlayoffMatch) and define the schemas as shown in the code provided.
+
+Set Up Express Routes: Create a new file for your Express routes (routes.js, for example) and define the routes as shown in the code provided.
+
+Run the Server: Create a new file (server.js, for example) where you import your Express app and start the server. Use app.listen to specify the port your server will run on.
+
+Test Your Endpoints: Use a tool like Postman or write test scripts using a testing framework like Mocha and Chai to test your endpoints by sending HTTP requests and verifying the responses.
