@@ -1,0 +1,52 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Axe Throwing App</title>
+    <!-- Add link to your CSS file for styling -->
+    <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+    <!-- Home Screen -->
+    <div id="home-screen" class="screen">
+        <h1>Welcome to the Axe Throwing App</h1>
+        <img src="logo.png" alt="App Logo">
+        <nav>
+            <ul>
+                <li><a href="#league-screen">League</a></li>
+                <li><a href="#matches-screen">Matches</a></li>
+                <li><a href="#players-screen">Players</a></li>
+                <li><a href="#standings-screen">Standings</a></li>
+                <li><a href="#playoffs-screen">Playoffs</a></li>
+                <li><a href="#settings-screen">Settings</a></li>
+            </ul>
+        </nav>
+    </div>
+
+    <!-- League Creation Screen -->
+    <div id="league-screen" class="screen">
+        <h2>Create a New League</h2>
+        <form id="league-form">
+            <label for="league-name">League Name:</label>
+            <input type="text" id="league-name" name="league-name">
+            <!-- Add more input fields for other league details -->
+            <button type="submit">Create League</button>
+        </form>
+    </div>
+
+    <!-- Matches Screen -->
+    <div id="matches-screen" class="screen">
+        <h2>Matches</h2>
+        <ul id="matches-list">
+            <!-- Match items will be dynamically generated here -->
+        </ul>
+        <button id="create-match-btn">Create New Match</button>
+    </div>
+
+    <!-- Add similar sections for Players, Standings, Playoffs, and Settings screens -->
+
+    <!-- Add script tags to include JavaScript for interactivity -->
+    <script src="app.js"></script>
+</body>
+</html>
